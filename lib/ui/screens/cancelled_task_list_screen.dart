@@ -6,10 +6,10 @@ import 'package:task_manager/ui/widgets/centered_circular_progress_indicator.dar
 import 'package:task_manager/ui/widgets/task_item_widget.dart';
 import 'package:task_manager/ui/widgets/task_status_summary_count.dart';
 import 'package:task_manager/ui/widgets/tm_appBar.dart';
-import '../controllers/new_task_controller.dart';
+import '../controllers/cancelled_task_controller.dart';
 
-class NewTaskListScreen extends StatelessWidget {
-  final NewTaskController controller = Get.put(NewTaskController());
+class CancelledTaskListScreen extends StatelessWidget {
+  final CancelledTaskController controller = Get.put(CancelledTaskController());
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +18,7 @@ class NewTaskListScreen extends StatelessWidget {
       body: BackgroundScreen(
         child: RefreshIndicator(
           onRefresh: controller.updateData,
-          child: GetBuilder<NewTaskController>(
+          child: GetBuilder<CancelledTaskController>(
             initState: (_) => controller.updateData(),
             builder: (ctrl) {
               return SingleChildScrollView(
@@ -50,7 +50,7 @@ class NewTaskListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTaskListView(NewTaskController ctrl) {
+  Widget _buildTaskListView(CancelledTaskController ctrl) {
     return ListView.builder(
       shrinkWrap: true,
       primary: false,
@@ -64,7 +64,7 @@ class NewTaskListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTasksSummaryByStatus(NewTaskController ctrl) {
+  Widget _buildTasksSummaryByStatus(CancelledTaskController ctrl) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: SizedBox(

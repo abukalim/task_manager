@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';  // Make sure this import is added for AlertDialog and TextButton
 import 'package:http/http.dart';
 import 'package:task_manager/app.dart';
@@ -179,7 +178,7 @@ class NetworkCaller {
       await AuthController.clearUserData();
       Navigator.pushNamedAndRemoveUntil(
         TaskManagerApp.navigatorKey.currentContext!,
-        SignInScreen.routeName,
+        SignInScreen.name,
             (_) => false,
       );
     }

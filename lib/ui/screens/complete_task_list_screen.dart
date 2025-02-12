@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:task_manager/ui/screens/add_new_task_screen.dart';
 import 'package:task_manager/ui/widgets/background_screen.dart';
-import 'package:task_manager/ui/widgets/centered_circular_progress_indicator.dart';
 import 'package:task_manager/ui/widgets/task_item_widget.dart';
 import 'package:task_manager/ui/widgets/task_status_summary_count.dart';
 import 'package:task_manager/ui/widgets/tm_appBar.dart';
-import '../controllers/new_task_controller.dart';
+import '../controllers/complete_task_controller.dart';
+import '../widgets/centered_circular_progress_indicator.dart';
 
-class NewTaskListScreen extends StatelessWidget {
-  final NewTaskController controller = Get.put(NewTaskController());
+class CompleteTaskListScreen extends StatelessWidget {
+  final CompleteTaskController controller = Get.put(CompleteTaskController());
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +18,7 @@ class NewTaskListScreen extends StatelessWidget {
       body: BackgroundScreen(
         child: RefreshIndicator(
           onRefresh: controller.updateData,
-          child: GetBuilder<NewTaskController>(
+          child: GetBuilder<CompleteTaskController>(
             initState: (_) => controller.updateData(),
             builder: (ctrl) {
               return SingleChildScrollView(
@@ -50,7 +50,7 @@ class NewTaskListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTaskListView(NewTaskController ctrl) {
+  Widget _buildTaskListView(CompleteTaskController ctrl) {
     return ListView.builder(
       shrinkWrap: true,
       primary: false,
@@ -64,7 +64,7 @@ class NewTaskListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTasksSummaryByStatus(NewTaskController ctrl) {
+  Widget _buildTasksSummaryByStatus(CompleteTaskController ctrl) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: SizedBox(

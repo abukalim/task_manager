@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:task_manager/ui/screens/forgot_password_verify_email_screen.dart';
+import 'package:task_manager/ui/screens/forgot_password_verify_otp_screen.dart';
+import 'package:task_manager/ui/screens/reset_password_screen.dart';
 import 'package:task_manager/ui/screens/sign_in_screen.dart';
-import 'package:task_manager/ui/screens/sign_up_screen.dart';
-import 'package:task_manager/ui/screens/forgot_password_email_verification.dart';  // Corrected spelling
-import 'package:task_manager/ui/screens/forgot_password_otp_verification.dart';    // Corrected spelling
+import 'package:task_manager/ui/screens/sign_up_screen.dart';   // Corrected spelling
 import 'package:task_manager/ui/screens/main_bottom_nav_screen.dart';
-import 'package:task_manager/ui/screens/recovery_password_screen.dart';
 import 'package:task_manager/ui/screens/splash_screen.dart';
 import 'package:task_manager/ui/screens/update_profile_screen.dart';
 import 'package:task_manager/ui/screens/add_new_task_screen.dart';
@@ -18,11 +19,11 @@ class TaskManagerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       theme: _buildAppTheme(),
-      initialRoute: SplashScreen.routeName,
-      onGenerateRoute: _getRoute,
+      initialRoute: SplashScreen.name,
+      getPages: _getPages(),
     );
   }
 
@@ -107,42 +108,56 @@ class TaskManagerApp extends StatelessWidget {
   }
 
   // Refactored route generation for better clarity and error handling
-  Route<dynamic> _getRoute(RouteSettings settings) {
-    late Widget widget;
-
-    switch (settings.name) {
-      case SplashScreen.routeName:
-        widget = const SplashScreen();
-        break;
-      case SignInScreen.routeName:
-        widget = const SignInScreen();
-        break;
-      case SignUpScreen.routeName:
-        widget = const SignUpScreen();
-        break;
-      case ForgotPasswordEmailVerification.routeName:
-        widget = const ForgotPasswordEmailVerification();
-        break;
-      case ForgotPasswordVerifyOtpScreen.name:
-        final String gmail = settings.arguments as String? ?? '';
-        widget = ForgotPasswordVerifyOtpScreen(gmail: gmail);
-        break;
-      case RecoveryPasswordScreen.routeName:
-        widget = RecoveryPasswordScreen();
-        break;
-      case MainBottomNavScreen.name:
-        widget = const MainBottomNavScreen();
-        break;
-      case AddNewTaskScreen.name:
-        widget = const AddNewTaskScreen();
-        break;
-      case UpdateProfileScreen.name:
-        widget = const UpdateProfileScreen();
-        break;
-      default:
-        widget = const SignInScreen(); // Default screen
-    }
-
-    return MaterialPageRoute(builder: (context) => widget);
+  List<GetPage> _getPages() {
+    return [
+      GetPage(
+        name: SplashScreen.name,
+        page: () => const SplashScreen(),
+        transition: Transition.fadeIn,
+      ),
+      GetPage(
+        name: SignInScreen.name,
+        page: () => SignInScreen(),
+        transition: Transition.rightToLeft,
+      ),
+      GetPage(
+        name: SignUpScreen.name,
+        page: () => SignUpScreen(),
+        transition: Transition.rightToLeft,
+      ),
+      GetPage(
+        name: ForgotPasswordVerifyEmailScreen.name,
+        page: () => const ForgotPasswordVerifyEmailScreen(),
+        transition: Transition.downToUp,
+      ),
+      GetPage(
+        name: ForgotPasswordVerifyOtpScreen.name,
+        page: () {
+          final String gmail = Get.arguments as String? ?? '';
+          return ForgotPasswordVerifyOtpScreen(email: gmail);
+        },
+        transition: Transition.zoom,
+      ),
+      GetPage(
+        name: ResetPasswordScreen.name,
+        page: () => ResetPasswordScreen(),
+        transition: Transition.fadeIn,
+      ),
+      GetPage(
+        name: MainBottomNavScreen.name,
+        page: () => const MainBottomNavScreen(),
+        transition: Transition.fadeIn,
+      ),
+      GetPage(
+        name: AddNewTaskScreen.name,
+        page: () => const AddNewTaskScreen(),
+        transition: Transition.rightToLeftWithFade,
+      ),
+      GetPage(
+        name: UpdateProfileScreen.name,
+        page: () => const UpdateProfileScreen(),
+        transition: Transition.leftToRightWithFade,
+      ),
+    ];
   }
 }

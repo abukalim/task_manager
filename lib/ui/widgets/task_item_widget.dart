@@ -1,168 +1,283 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:task_manager/data/models/task_model.dart';
-import 'package:task_manager/ui/utils/app_colors.dart';
+import 'package:task_manager/data/services/network_caller.dart';
+import 'package:task_manager/data/utils/urls.dart';
+import 'package:task_manager/ui/widgets/centered_circular_progress_indicator.dart';
+import 'package:task_manager/ui/widgets/snack_bar_message.dart';
 
-class TaskItemWidget extends StatelessWidget {
-  final TaskModel taskModel;
-  final VoidCallback ontabDetele;
-  final ValueChanged ontabChangeStatus;
+class TaskItemWidget extends StatefulWidget {
   TaskItemWidget({
     super.key,
     required this.taskModel,
-    required this.ontabDetele,
-    required this.ontabChangeStatus,
+    this.updateTaskCallBack,
   });
 
-  final List<String> dropdownItems = [
-    'New',
-    'Progress',
-    'Cancelled',
-    'Completed',
-  ];
-  final List<Color> dropdownItemsColor = [
-    Colors.lightBlueAccent,
-    Colors.purpleAccent,
-    Colors.redAccent,
-    AppColors.themColor,
-  ];
+  final TaskModel taskModel;
+  final VoidCallback? updateTaskCallBack;
 
+  @override
+  State<TaskItemWidget> createState() => _TaskItemWidgetState();
+}
+
+class _TaskItemWidgetState extends State<TaskItemWidget> {
   @override
   Widget build(BuildContext context) {
     return Card(
       color: Colors.white,
-      elevation: 1,
-      shadowColor: Colors.black38,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 8.0),
-        child: ListTile(
-          title: Text(
-            taskModel.title ?? '',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.black87,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 4),
-              Text(
-                taskModel.description ?? '',
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.black54,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                taskModel.createdDate ?? '',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: Color(
-                    0xff3d3d3d,
+      elevation: 0,
+      child: ListTile(
+        title: Text(widget.taskModel.title ?? ''),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.taskModel.description ?? ''),
+            Text('Date: ${widget.taskModel.createdDate ?? ''}'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: _getStatusColor(widget.taskModel.status ?? 'New'),
                   ),
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      color: dropdownItemsColor[
-                      _getStatusColor(taskModel.status!)],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
-                      child: Text(
-                        taskModel.status!,
-                        style: TextStyle(fontSize: 10, color: Colors.white),
-                      ),
+                  child: Text(
+                    widget.taskModel.status ?? 'New',
+                    style: const TextStyle(
+                      color: Colors.white,
                     ),
                   ),
-                  Row(
-                    children: [
-                      DropdownButton<String>(
-                        dropdownColor: Colors.white,
-                        underline: SizedBox(),
-                        icon: Icon(
-                          Icons.note_alt_outlined,
-                          size: 20,
-                          color: Colors.green,
-                        ),
-                        items: List.generate(
-                          dropdownItems.length,
-                              (index) {
-                            return DropdownMenuItem<String>(
-                              value: dropdownItems[index],
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  color: dropdownItemsColor[index],
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 4),
-                                  child: Text(
-                                    dropdownItems[index],
-                                    style: TextStyle(
-                                        fontSize: 10, color: Colors.white),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        onChanged: ontabChangeStatus,
-                      ),
-                      SizedBox(width: 10),
-                      IconButton(
-                        onPressed: ontabDetele,
-                        icon: const Icon(
-                          Icons.delete,
-                          color: Colors.redAccent,
-                          size: 20,
-                        ),
-                      ),
-                    ],
-                  )
-                ],
-              )
-            ],
-          ),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        deleteCustomDialog(context);
+                      },
+                      icon: const Icon(Icons.delete),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        customEditTaskDialog(context);
+                      },
+                      icon: const Icon(Icons.edit),
+                    ),
+                  ],
+                )
+              ],
+            )
+          ],
         ),
       ),
     );
   }
 
-  PopupMenuItem<dynamic> buildPopupMenuItem(_title, _color) {
-    return PopupMenuItem(
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 5,
-            backgroundColor: _color,
+  void deleteCustomDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        bool _isUpdating = false;
+        return Dialog(
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: IntrinsicHeight(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: StatefulBuilder(
+                  builder: (BuildContext context,
+                      void Function(void Function()) setState) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "Are you sure want to delete this?",
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            SizedBox(
+                              width: 80,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: const Text("NO"),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            SizedBox(
+                              width: 80,
+                              child: ElevatedButton(
+                                onPressed: _isUpdating
+                                    ? null
+                                    : () async {
+                                  setState(() {
+                                    _isUpdating = true;
+                                  });
+                                  final NetworkResponse response =
+                                  await NetworkCaller.getRequest(
+                                    url:
+                                    '${Urls.taskDeleteStatusUrl}/${widget.taskModel.sId}',
+                                  );
+                                  if (response.isSuccess) {
+                                    showSnackBarMessage(context,
+                                        "Task deleted successfully",false);
+                                    widget.updateTaskCallBack?.call();
+                                  } else {
+                                    showSnackBarMessage(
+                                        context, response.errorMessage,true);
+                                  }
+                                  setState(() {
+                                    _isUpdating = false;
+                                  });
+                                  Navigator.pop(context);
+                                },
+                                child: _isUpdating
+                                    ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                                )
+                                    : const Text("YES"),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
           ),
-          SizedBox(width: 6),
-          Text(_title),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  int _getStatusColor(String status) {
+  Future<dynamic> customEditTaskDialog(BuildContext context) {
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          bool _isUpdating = false;
+          // Selected value
+          String? _selectedItem;
+          final List<String> _items = [
+            "New",
+            "Progress",
+            "Cancelled",
+            "Completed"
+          ];
+          return Dialog(
+            shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: IntrinsicHeight(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: StatefulBuilder(
+                      builder: (BuildContext context, SetState) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 16),
+                            const Text(
+                              "Select Task Status",
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w500),
+                            ),
+                            DropdownButton<String>(
+                              hint: const Text("Status"),
+                              value: _selectedItem,
+                              isExpanded: true,
+                              items: _items.map((String item) {
+                                return DropdownMenuItem<String>(
+                                  value: item,
+                                  child: Text(item),
+                                );
+                              }).toList(),
+                              onChanged: (String? value) {
+                                SetState(() {
+                                  _selectedItem = value;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              _selectedItem == null
+                                  ? 'No item selected'
+                                  : 'Selected: $_selectedItem',
+                              style: const TextStyle(
+                                  fontSize: 16, fontStyle: FontStyle.italic),
+                            ),
+                            const SizedBox(
+                              height: 16,
+                            ),
+                            ElevatedButton(
+                                onPressed: () async {
+                                  if (_selectedItem != null) {
+                                    SetState(() {
+                                      _isUpdating = true;
+                                    });
+                                    final NetworkResponse response =
+                                    await NetworkCaller.getRequest(
+                                        url:
+                                        '${Urls.taskUpdateStatusUrl}/${widget.taskModel.sId}/${_selectedItem}');
+                                    if (response.isSuccess) {
+                                      showSnackBarMessage(context,
+                                          "Task status updated successfully",false);
+                                      widget.updateTaskCallBack?.call();
+                                    } else {
+                                      showSnackBarMessage(
+                                          context, response.errorMessage,true);
+                                    }
+                                    SetState(() {
+                                      _isUpdating = false;
+                                    });
+                                    Navigator.pop(context);
+                                  } else {
+                                    showSnackBarMessage(
+                                        context, "Please select a status",false);
+                                  }
+                                },
+                                child: _isUpdating
+                                    ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                                )
+                                    : const Text("Update")),
+                          ],
+                        );
+                      }),
+                ),
+              ),
+            ),
+          );
+        });
+  }
+
+  Color _getStatusColor(String status) {
     if (status == 'New') {
-      return 0;
+      return Colors.blue;
     } else if (status == 'Progress') {
-      return 1;
-    } else if (status == 'Cancel') {
-      return 2;
+      return Colors.yellow;
+    } else if (status == 'Cancelled') {
+      return Colors.red;
     } else {
-      return 3;
+      return Colors.green;
     }
   }
 }
